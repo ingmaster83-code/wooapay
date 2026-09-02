@@ -54,11 +54,12 @@ function doSearch() {
   }
   grid.innerHTML = results.map(r => {
     const f = r.item;
-    return `<a class="camp-card" href="/region/${encodeURIComponent(f.do)}/${encodeURIComponent(f.sg)}/">
+    const dongLabel = f.dg === '기타' ? '기타 지역' : f.dg;
+    return `<a class="camp-card" href="/region/${encodeURIComponent(f.do)}/${encodeURIComponent(f.sg)}/${encodeURIComponent(f.dg)}/">
       <div class="camp-card-img-placeholder">💳</div>
       <div class="camp-card-body">
         <div class="camp-card-name">${f.n}</div>
-        <div class="camp-card-loc">📍 ${f.do || ''} ${f.sg || ''} (목록에서 찾아보세요)</div>
+        <div class="camp-card-loc">📍 ${f.do || ''} ${f.sg || ''} ${dongLabel || ''} (목록에서 찾아보세요)</div>
       </div>
     </a>`;
   }).join('');

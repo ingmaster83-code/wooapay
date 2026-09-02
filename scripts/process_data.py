@@ -20,6 +20,26 @@ RAW = ROOT / "_rawdata" / "pay_raw.json"
 RAWDATA_DIR = ROOT / "_rawdata"
 SEARCH_INDEX_OUT = ROOT / "search_index.json"
 
+# 동/읍/면 추출 — 지번주소 우선(있으면 항상 시군구 바로 다음 토큰), 없으면 도로명주소에서
+# "시/군/구" 다음 토큰 또는 괄호 안 법정동 표기("...(마곡동)")를 시도.
+# "OO동1가/2가"(옛 법정동 세분화 표기)도 포함. 도로명(...로/...길)만 있고 동 정보가
+# 전혀 없는 주소는 추출 불가 — 이 경우 dong=""(시군구 페이지의 "기타" 버킷으로 귀속).
+_DONG_RE1 = re.compile(r"(?:시|군|구)\s+([가-힣0-9]+동(?:\d+가)?|[가-힣0-9]+(?:읍|면))(?:\s|\(|$)")
+_DONG_RE2 = re.compile(r"\(([가-힣0-9]+동(?:\d+가)?)[,)]")
+
+
+def extract_dong(addr: str):
+    if not addr:
+        return None
+    m = _DONG_RE1.search(addr)
+    if m:
+        return m.group(1)
+    m2 = _DONG_RE2.search(addr)
+    if m2:
+        return m2.group(1)
+    return None
+
+
 DO_MAP = {
     "서울특별시": "서울", "부산광역시": "부산", "대구광역시": "대구",
     "인천광역시": "인천", "광주광역시": "광주", "대전광역시": "대전",
@@ -76,6 +96,9 @@ def main():
             skipped += 1
             continue
 
+        lotno_addr = (d.get("LCTN_LOTNO_ADDR") or "").strip()
+        dong = extract_dong(lotno_addr) or extract_dong(addr) or "기타"
+
         slug = make_slug(store_name, local_bill, addr)
         seen_slugs[slug] += 1
         if seen_slugs[slug] > 1:
@@ -86,6 +109,7 @@ def main():
             "doShort": do_short,
             "doFull": do_full,
             "sigungu": sigungu,
+            "dong": dong,
             "addr": addr,
             "localBill": local_bill,
             "sector": (d.get("SECTOR_NM") or "").strip(),
@@ -120,9 +144,16 @@ def main():
     for (do, sg), cnt in sigungu_counts.most_common(5):
         print(f"  {do} {sg}: {cnt}개")
 
+    dong_counts = Counter((i["doShort"], i["sigungu"], i["dong"]) for i in items)
+    no_dong = sum(1 for i in items if i["dong"] == "기타")
+    print(f"\n동/읍/면 조합 수: {len(dong_counts)}개 (동 추출 실패 → '기타' 처리: {no_dong}개, {no_dong/len(items)*100:.1f}%)")
+    print("최다 동 top5:")
+    for (do, sg, dg), cnt in dong_counts.most_common(5):
+        print(f"  {do} {sg} {dg}: {cnt}개")
+
     # 검색 인덱스 (짧은 키로 용량 최소화)
     index = [
-        {"n": i["storeName"], "s": i["slug"], "do": i["doShort"], "sg": i["sigungu"]}
+        {"n": i["storeName"], "s": i["slug"], "do": i["doShort"], "sg": i["sigungu"], "dg": i["dong"]}
         for i in items
     ]
     SEARCH_INDEX_OUT.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

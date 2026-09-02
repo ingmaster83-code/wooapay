@@ -103,12 +103,13 @@ function doSearch() {
 }
 
 function searchResultItem(f) {
+  const dongLabel = f.dg === '기타' ? '기타 지역' : f.dg;
   return `<div class="search-result-item">
-    <a href="/region/${encodeURIComponent(f.do)}/${encodeURIComponent(f.sg)}/">
+    <a href="/region/${encodeURIComponent(f.do)}/${encodeURIComponent(f.sg)}/${encodeURIComponent(f.dg)}/">
       <div class="search-result-thumb" style="background:#E0E7FF;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border-radius:6px;">💳</div>
       <div>
         <div class="search-result-name">${f.n}</div>
-        <div class="search-result-loc">📍 ${f.do || ''} ${f.sg || ''} (목록에서 찾아보세요)</div>
+        <div class="search-result-loc">📍 ${f.do || ''} ${f.sg || ''} ${dongLabel || ''} (목록에서 찾아보세요)</div>
       </div>
     </a>
   </div>`;

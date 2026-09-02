@@ -1,0 +1,81 @@
+---
+layout: default
+---
+
+<div class="page-with-sidebar">
+<div class="region-page">
+
+  <nav class="breadcrumb" aria-label="위치">
+    <a href="/">홈</a>
+    <span>›</span>
+    <a href="/region/{{ page.doShort | uri_escape }}/">{{ page.doShort }}</a>
+    <span>›</span>
+    <a href="/region/{{ page.doShort | uri_escape }}/{{ page.sigungu | uri_escape }}/">{{ page.sigungu }}</a>
+    <span>›</span>
+    <span>{% if page.dong == "기타" %}기타 지역{% else %}{{ page.dong }}{% endif %}</span>
+  </nav>
+
+  <div class="region-page-header">
+    <h1>💳 {{ page.doShort }} {{ page.sigungu }} {% if page.dong == "기타" %}기타 지역{% else %}{{ page.dong }}{% endif %} 지역화폐 가맹점</h1>
+    <p>총 {{ page.totalCount }}곳</p>
+  </div>
+
+  <!-- 광고 -->
+  <div class="ad-slot">
+    {% include ad.html %}
+  </div>
+
+  <!-- 가맹점명/업종 검색 -->
+  <div style="margin-bottom:16px;">
+    <input type="text" id="sgguFilter" class="search-input" style="border:1px solid #E5E7EB;" placeholder="가맹점명 또는 업종으로 이 지역 안에서 다시 찾기...">
+  </div>
+
+  {% if page.truncated %}
+  <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:.87rem;color:#3730A3;">
+    가맹점이 많아 상위 {{ page.items.size }}곳만 표시합니다. 원하는 매장을 못 찾으셨나요? <a href="/search/?q={{ page.sigungu | uri_escape }}" style="color:#4F46E5;font-weight:700;">검색으로 찾아보기 →</a>
+  </div>
+  {% endif %}
+
+  <div class="camp-grid" id="itemGrid">
+    {% for s in page.items %}
+    <div class="camp-card" data-name="{{ s.storeName | escape }}" data-sector="{{ s.sector | escape }}">
+      <div class="camp-card-img-placeholder">💳</div>
+      <div class="camp-card-body">
+        <div class="camp-card-name">{{ s.storeName }}</div>
+        <div class="camp-card-loc">📍 {{ s.addr }}</div>
+        {% if s.localBill and s.localBill != "" %}<div class="camp-card-loc">💰 {{ s.localBill }}</div>{% endif %}
+        {% if s.sector and s.sector != "" %}<div class="camp-card-tags"><span class="tag tag-type">{{ s.sector }}</span></div>{% endif %}
+        {% if s.tel and s.tel != "" %}<div class="camp-card-loc">📞 <a href="tel:{{ s.tel }}">{{ s.tel }}</a></div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p id="noResult" style="display:none;color:#6B7280;text-align:center;padding:20px;">검색 결과가 없습니다.</p>
+
+  <div style="margin-top:40px;background:#F9FAFB;border-radius:14px;padding:24px 28px;">
+    <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:12px;">지역화폐란?</h2>
+    <p style="color:#374151;line-height:1.8;font-size:.9375rem;">
+      지역화폐(지역사랑상품권)는 지방자치단체가 지역경제 활성화를 위해 발행하는 결제수단으로, 등록된 가맹점에서만 사용할 수 있습니다.
+      지역마다 이름(OO페이·OO사랑상품권 등)과 가맹 업종이 다르므로 방문 전 사용 가능 여부를 확인하는 것이 좋습니다.
+    </p>
+  </div>
+
+</div>
+<aside class="tool-sidebar"></aside>
+</div>
+
+<script>
+document.getElementById('sgguFilter').addEventListener('input', function(e) {
+  const q = e.target.value.trim().toLowerCase();
+  const cards = document.querySelectorAll('#itemGrid .camp-card');
+  let visible = 0;
+  cards.forEach(c => {
+    const name = (c.dataset.name || '').toLowerCase();
+    const sector = (c.dataset.sector || '').toLowerCase();
+    const match = !q || name.includes(q) || sector.includes(q);
+    c.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('noResult').style.display = visible === 0 ? '' : 'none';
+});
+</script>
