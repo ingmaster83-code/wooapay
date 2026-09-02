@@ -1,0 +1,126 @@
+---
+layout: default
+title: 전국 지역화폐 가맹점 찾기
+description: 전국 181,710곳의 지역화폐(지역사랑상품권) 가맹점을 지역별로 검색하세요.
+---
+
+<!-- 히어로 & 검색 -->
+<div class="hero">
+  <h1>💳 우리 동네 지역화폐 가맹점</h1>
+  <p>가게 이름 또는 지역으로 검색하세요</p>
+  <div class="search-wrap">
+    <input type="text" id="searchInput" class="search-input"
+           placeholder="예) 수원, OO마트..."
+           autocomplete="off" aria-label="지역화폐 가맹점 검색">
+    <button class="search-btn" onclick="doSearch()">🔍 검색</button>
+  </div>
+</div>
+
+<div class="page-with-sidebar">
+<div>
+<!-- 검색 결과 -->
+<div id="search-results"></div>
+
+<!-- 광고 -->
+<div class="top-ad-bar">
+  {% include ad.html %}
+</div>
+
+<!-- 소개 -->
+<div class="section" style="padding-bottom:0;">
+  <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:14px;padding:20px 24px;">
+    <p style="color:#3730A3;line-height:1.8;font-size:.92rem;">
+      💡 전국 <strong>181,710</strong>곳의 지역화폐(지역사랑상품권) 가맹점을 한 번에 확인하세요.
+      수원페이·고양페이 등 지자체마다 이름은 달라도 마트·음식점·병원·약국까지 폭넓게 사용할 수 있습니다.
+    </p>
+  </div>
+</div>
+
+<div class="section" style="padding-top:0;">
+  <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:16px 20px;">
+    <p style="color:#92400E;font-size:.85rem;line-height:1.7;">
+      ⚠️ 일부 지자체는 아직 데이터가 등록되지 않아 목록에 없을 수 있습니다(전국 지역화폐 발행 지역 중 일부만 포함).
+    </p>
+  </div>
+</div>
+
+<!-- 지역별 찾기 -->
+<div class="section">
+  <h2 class="section-title">📍 지역별 가맹점 찾기</h2>
+  <div class="region-grid">
+    <a href="/region/경기/" class="region-btn"><span class="region-icon">🌆</span>경기</a>
+    <a href="/region/전남/" class="region-btn"><span class="region-icon">🐚</span>전남</a>
+    <a href="/region/인천/" class="region-btn"><span class="region-icon">⚓</span>인천</a>
+    <a href="/region/강원/" class="region-btn"><span class="region-icon">🏔️</span>강원</a>
+    <a href="/region/서울/" class="region-btn"><span class="region-icon">🏙️</span>서울</a>
+    <a href="/region/전북/" class="region-btn"><span class="region-icon">🌾</span>전북</a>
+    <a href="/region/부산/" class="region-btn"><span class="region-icon">🌅</span>부산</a>
+    <a href="/region/충북/" class="region-btn"><span class="region-icon">📖</span>충북</a>
+    <a href="/region/경남/" class="region-btn"><span class="region-icon">🎋</span>경남</a>
+    <a href="/region/경북/" class="region-btn"><span class="region-icon">🍎</span>경북</a>
+    <a href="/region/충남/" class="region-btn"><span class="region-icon">🌊</span>충남</a>
+  </div>
+</div>
+
+</div>
+<aside class="tool-sidebar"></aside>
+</div>
+
+<!-- Fuse.js 검색 (검색 시에만 지연 로딩 — 인덱스 16.0MB) -->
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<script>
+let fuseIndex = null;
+let fuse = null;
+
+async function loadIndex() {
+  if (fuseIndex) return;
+  const resp = await fetch('/search_index.json');
+  fuseIndex = await resp.json();
+  fuse = new Fuse(fuseIndex, {
+    keys: ['n', 'do', 'sg'],
+    threshold: 0.3,
+    minMatchCharLength: 1,
+  });
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) { document.getElementById('search-results').innerHTML = ''; return; }
+  const el = document.getElementById('search-results');
+  el.innerHTML = '<p style="text-align:center;padding:20px;color:#6B7280;">검색 중...</p>';
+  loadIndex().then(() => {
+    const results = fuse.search(q).slice(0, 30);
+    if (results.length === 0) {
+      el.innerHTML = '<p style="text-align:center;padding:20px;color:#6B7280;">검색 결과가 없습니다.</p>';
+      return;
+    }
+    el.innerHTML = `<div style="max-width:960px;margin:0 auto;padding:0 20px;">
+      <p style="padding:8px 0;font-size:.9rem;color:#6B7280;">"${q}" 검색 결과 ${results.length}개</p>
+      ${results.map(r => searchResultItem(r.item)).join('')}
+    </div>`;
+    el.scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+function searchResultItem(f) {
+  return `<div class="search-result-item">
+    <a href="/region/${encodeURIComponent(f.do)}/${encodeURIComponent(f.sg)}/">
+      <div class="search-result-thumb" style="background:#E0E7FF;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border-radius:6px;">💳</div>
+      <div>
+        <div class="search-result-name">${f.n}</div>
+        <div class="search-result-loc">📍 ${f.do || ''} ${f.sg || ''} (목록에서 찾아보세요)</div>
+      </div>
+    </a>
+  </div>`;
+}
+
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+const urlQ = new URLSearchParams(location.search).get('q');
+if (urlQ) {
+  document.getElementById('searchInput').value = urlQ;
+  doSearch();
+}
+</script>
